@@ -80,10 +80,10 @@ for i=1:length(t)
     td(i) = 2 * r_t(i) / speedOfLight;
     
     % Transmiting Signal
-    Tx(i) = cos(2 * pi * ((radarFreq * t(i)) + (Schirp * t(i)^2)/2));
+    Tx(i) = cos(2 * pi * ( (radarFreq * t(i)) + ((Schirp * t(i)^2)/2) ) );
     % Receiving Signal, basically a time-delayed version of the transmitted
     % signal
-    Rx(i)= cos(2 * pi * ((radarFreq * (t(i)-td(i))) + (Schirp * (t(i)-td(i))^2)/2));
+    Rx(i) = cos(2 * pi * ( (radarFreq * (t(i)-td(i))) + ((Schirp * (t(i)-td(i))^2)/2) ) );
     
     %Now by mixing the Transmit and Receive generate the beat signal
     %This is done by element wise matrix multiplication of Transmit and
@@ -148,23 +148,20 @@ figure,surf(doppler_axis,range_axis,RDM);
 %Slide Window through the complete Range Doppler Map
 
 %Select the number of Training Cells in both the dimensions.
-Tr = 9;     % Training range
-Td = 5;     % Training Doppler
+Tr = 10;    % Training range
+Td = 8;     % Training Doppler
 
 %Select the number of Guard Cells in both dimensions around the Cell under 
 %test (CUT) for accurate estimation
 Gr = 5;
-Gd = 3;
+Gd = 5;
+
+% Calculate number if train cell
+TrainCellsize = (2 * (Td+Gd+1) * 2 * (Tr+Gr+1)) - (Gr*Gd) - 1;
 
 % offset the threshold by SNR value in dB
 offset_snr = 1.4;
 
-% *%TODO* :
-%Create a vector to store noise_level for each iteration on training cells
-noise_level = zeros(1,1);
-
-
-% *%TODO* :
 %design a loop such that it slides the CUT across range doppler map by
 %giving margins at the edges for Training and Guard Cells.
 %For every iteration sum the signal level within all the training
@@ -178,29 +175,52 @@ noise_level = zeros(1,1);
 
    % Use RDM[x,y] as the matrix from the output of 2D FFT for implementing
    % CFAR
-
-
-
-
-
+   
 % *%TODO* :
 % The process above will generate a thresholded block, which is smaller 
 %than the Range Doppler Map as the CUT cannot be located at the edges of
 %matrix. Hence,few cells will not be thresholded. To keep the map size same
 % set those values to 0. 
- 
 
-
-
-
-
-
-
+% Within whole 2D data
+for i = (Tr+Gr+1):(Nr/2)-(Tr+Gr)
+    for j = (Td+Gd+1):Nd-(Td+Gd)
+        %Create a vector to store noise_level for each iteration on training cells
+        noise_level = zeros(1,1);
+        % Within Training Band
+        for x = i-(Tr+Gr) : i+(Tr+Gr)
+            for y = j-(Td+Gd) : j+(Td+Gd)
+                %Skip cells within Guard band
+                if (abs(i-x) > Gr || abs(j-y) > Gd)
+                    %calculate noise level
+                    noise_level = noise_level + db2pow(RDM(x,y));
+                end
+            end
+        end
+        % END -- within training band
+        
+        noiseNorm = noise_level/TrainCellsize;
+        % Calculate threshold, convert back to db first
+        threshold = pow2db(noiseNorm);
+        % Add SNR offset
+        threshold = threshold + offset_snr;
+        
+        % Check noise value at CUT cell
+        CUT = RDM(i,j);
+        % Check if CUT exceeding threshold value
+        if (CUT < threshold)
+            RDM(i,j) = 0;
+        else
+            RDM(i,j) = 1;
+        end
+        
+    end
+end
 
 % *%TODO* :
 %display the CFAR output using the Surf function like we did for Range
 %Doppler Response output.
-figure,surf(doppler_axis,range_axis,'replace this with output');
+figure,surf(doppler_axis,range_axis,RDM);
 colorbar;
 
 
