@@ -175,6 +175,7 @@ offset_snr = 1.4;
 
    % Use RDM[x,y] as the matrix from the output of 2D FFT for implementing
    % CFAR
+   RDM = RDM/max(max(RDM)); % Normalizing
    
 % *%TODO* :
 % The process above will generate a thresholded block, which is smaller 
@@ -217,6 +218,9 @@ for i = (Tr+Gr+1):(Nr/2)-(Tr+Gr)
     end
 end
 
+% Noise suppression, at 4 side of the map
+RDM(RDM~=0 & RDM~=1) = 0;
+
 % *%TODO* :
 %display the CFAR output using the Surf function like we did for Range
 %Doppler Response output.
@@ -225,4 +229,4 @@ colorbar;
 
 
  
- 
+

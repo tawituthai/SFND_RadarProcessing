@@ -63,3 +63,35 @@ Output of the signal after 2D FFT shown here,
 |:--:| 
 | *Output of 2D FFT operation* |
 
+Implement 2D CFAR is pretty much the same as 1D CFAR with a bit little bit more details on cells indexing. I am using a topology shown here to design both my inner/outter loop in order to calculate noise level.
+
+| <img src="images/CFAR_Mask.png" width="782" height="476" /> | 
+|:--:| 
+| *2D CFAR cells (image is not to scale)* |
+
+### Train cell and Guard cell size
+For Train cell choose:
+- Tr = 10
+- Td = 8
+And for Guard cell:
+- Gr = 5
+- Gd = 5
+
+### Loop design
+From information above, we can now determine start/end position of both inner and outter loop
+
+First, for outter loop. We want to move a position of CUT cell throughout the map, `CUT cell position (i, j)` start from ((Tr+Gr+1), (Td+Gd+1)) and end at ((Nr/2 - (Tr+Gr)),(Nd - (Td+Gd))). The end position is shown in the picture above for clarity.
+
+Lastly, for inner loop. We want to go through all the training cell to get noise level of each cell in order to calculate a threshold value. `Position of training cell (x, y)` is relative to CUT cell position (i, j). The training cell position start from ((i - (Tr+Gr)),(j - (Td+Gd))) and end at ((i + (Tr+Gr)),(j + (Td+Gd))). At the same time, we also need to check if the cell position fell into Guard area.
+
+After each inner loop done, we can calculate theshold level and determine if CUT cell is signal/noise.
+
+### Noise suppression
+Since there are a few area in the map that won't get process by CFAR, Train areas on 4 side of the map. We will need so suppress those cell to have a value of 0.
+
+The result of 2D CFAR is as follow
+
+### Final output
+| <img src="images/2DCFAR_Out.png" width="782" height="476" /> | 
+|:--:| 
+| *2D CFAR Output* |
