@@ -73,6 +73,7 @@ Implement 2D CFAR is pretty much the same as 1D CFAR with a bit little bit more 
 For Train cell choose:
 - Tr = 10
 - Td = 8
+
 And for Guard cell:
 - Gr = 5
 - Gd = 5
